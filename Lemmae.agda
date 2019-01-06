@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as ≡
 open import Data.Empty using (⊥-elim)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Nat using (ℕ; zero; suc;
-  _≤_; _<_; decTotalOrder; z≤n; s≤s; module ≤-Reasoning;
+  _≤_; _<_; z≤n; s≤s;
   pred; _+_; _∸_; _⊔_)
 open import Data.Product using (proj₂)
 open ℕProp using (m≤m⊔n)
@@ -18,25 +18,20 @@ open import Relation.Binary
 open ≡ using (cong; _≡_; _≢_; module ≡-Reasoning)
 
 private
-  module ≤ = Relation.Binary.DecTotalOrder decTotalOrder
+  module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
 open Relation.Binary.StrictTotalOrder ℕProp.strictTotalOrder using (compare)
 open Algebra.CommutativeSemiring ℕProp.commutativeSemiring
   using (+-comm; *-comm; distrib)
-
--- Equivalent to but more convenient than ≤⇒pred≤
--- Not least because it doesn't demand typing \Rightarrow.
-weaken : {n m : ℕ} → n < m → n ≤ m
-weaken {n}{suc m} (s≤s lt) = ℕProp.≤⇒pred≤ (suc n) (suc m) (s≤s lt)
 
 -- Increasing implies nondecreasing.
 weaken-monotonic : {f : ℕ → ℕ}
   → f Preserves _<_ ⟶ _<_
   → f Preserves _≤_ ⟶ _≤_
 weaken-monotonic _ {n} {m} _ with compare n m
-weaken-monotonic strong _     | tri< lt _ _ = weaken (strong lt)
+weaken-monotonic strong _     | tri< lt _ _ = ℕProp.≤⇒pred≤ (strong lt)
 weaken-monotonic _ {n} {.n} _ | tri≈ _ ≡.refl _ = ≤.refl
-weaken-monotonic _ le         | tri> _ ne gt = ⊥-elim (ne (≤.antisym le (weaken gt)))
+weaken-monotonic _ le         | tri> _ ne gt = ⊥-elim (ne (≤.antisym le (ℕProp.≤⇒pred≤ gt)))
 
 <⇒≢ : ∀ {m n} → m < n → m ≢ n
 <⇒≢ le ≡.refl = ℕProp.1+n≰n le
@@ -60,7 +55,7 @@ m≤n⊔m m n = begin
   m ⊔ n ≡⟨ ⊔.comm m n ⟩
   n ⊔ m ∎
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
 
 _⊔-mono_ : _⊔_ Preserves₂ _≤_ ⟶ _≤_ ⟶ _≤_
 _⊔-mono_ {zero}{y}{u}{v} z≤n u≤v = begin
@@ -68,14 +63,14 @@ _⊔-mono_ {zero}{y}{u}{v} z≤n u≤v = begin
   v     ≤⟨ m≤n⊔m v y ⟩
   y ⊔ v ∎
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
 _⊔-mono_ {x}{y}{zero}{v} x≤y z≤n = begin
   x ⊔ 0 ≡⟨ proj₂ ⊔.identity x ⟩
   x     ≤⟨ x≤y ⟩
   y     ≤⟨ m≤m⊔n y v ⟩
   y ⊔ v ∎
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
 s≤s x≤y ⊔-mono s≤s u≤v = s≤s (x≤y ⊔-mono u≤v)
 
 x⊔x≡x : (x : ℕ) → x ⊔ x ≡ x
@@ -99,15 +94,15 @@ mono-⊔ {f} mono {x} {y} | tri< x<y _ _ = ≡.trans lemma₁ lemma₂
  where
   lemma₁ : f (x ⊔ y) ≡ f y
   lemma₂ : f y ≡ f x ⊔ f y
-  lemma₁ = cong f (≤-⊔ x y (weaken x<y))
-  lemma₂ = ≡.sym (≤-⊔ (f x) (f y) (mono (weaken x<y)))
+  lemma₁ = cong f (≤-⊔ x y (ℕProp.≤⇒pred≤ x<y))
+  lemma₂ = ≡.sym (≤-⊔ (f x) (f y) (mono (ℕProp.≤⇒pred≤ x<y)))
 mono-⊔ {f} mono {x} {.x} | tri≈ _ ≡.refl _ = ≡.trans (cong f (x⊔x≡x x)) (≡.sym (x⊔x≡x (f x)))
 mono-⊔ {f} mono {x} {y} | tri> _ _ y<x = ≡.trans lemma₁ lemma₂
  where
   lemma₁ : f (x ⊔ y) ≡ f x
   lemma₂ : f x ≡ f x ⊔ f y
-  lemma₁ = cong f (≡.trans (⊔.comm x y) (≤-⊔ y x (weaken y<x)))
-  lemma₂ = ≡.sym (≡.trans (⊔.comm (f x) (f y)) (≤-⊔ (f y) (f x) (mono (weaken y<x))))
+  lemma₁ = cong f (≡.trans (⊔.comm x y) (≤-⊔ y x (ℕProp.≤⇒pred≤ y<x)))
+  lemma₂ = ≡.sym (≡.trans (⊔.comm (f x) (f y)) (≤-⊔ (f y) (f x) (mono (ℕProp.≤⇒pred≤ y<x))))
 
 maximum : {n : ℕ} → Vec ℕ n → ℕ
 maximum = foldr (const ℕ) _⊔_ 0
@@ -126,7 +121,7 @@ maximum-is (x ∷ xs) (suc i) = begin
     ≡⟨ ≡.refl ⟩
   maximum (x ∷ xs) ∎
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
 
 maximum-universal : {n : ℕ} → (xs : Vec ℕ n) → (m : ℕ) → ((i : Fin n) → lookup i xs ≤ m) → maximum xs ≤ m
 maximum-universal [] _ _ = z≤n

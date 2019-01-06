@@ -6,14 +6,12 @@ import Data.Nat.Properties as ℕProp
 
 open import Data.Nat using (ℕ; zero; suc;
   _≤_; _<_; z≤n; s≤s;
-  decTotalOrder; module ≤-Reasoning;
   pred; _+_; _*_; _⊔_)
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Product using (Σ; _,_; proj₁; proj₂)
 open import Data.Vec using (Vec; _∷_; []; [_];
   lookup; map)
 open import Function using (_∘_; _∘′_; _$_)
-open import Relation.Nullary.Core using (¬_)
 open ℕProp using (m≤m⊔n)
 module ≡ where
   open import Relation.Binary.PropositionalEquality public
@@ -25,7 +23,7 @@ open import Lemmae
 open import PrimitiveRecursion
 
 private
-  module ≤ = Relation.Binary.DecTotalOrder decTotalOrder
+  module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
 open Algebra.CommutativeSemiring ℕProp.commutativeSemiring
   using (+-comm)
@@ -46,7 +44,7 @@ ack-dominates-psuc (x ∷ []) = begin
     ≡⟨ ≡.refl ⟩
   ack 1 (maximum [ x ]) ∎
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
 
 ack-dominates-primrec : {n : ℕ}
   → (p : PrimRec n)
@@ -57,7 +55,7 @@ ack-dominates-primrec (pproj i) = 0 , λ args → s≤s (maximum-is args i)
 ack-dominates-primrec (pcomp {i}{o} g hs) with ack-dominates-primrec g
 ... | cg , pg = cf , ccomp
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
   prec-bound : Set
   prec-bound = Σ (PrimRec i) (λ p → ack-bound ⟦ p ⟧)
   -- chs is a map, but writing it as one fails the termination checker
@@ -130,7 +128,7 @@ ack-dominates-primrec (pcomp {i}{o} g hs) with ack-dominates-primrec g
     suc (⟦ g ⟧ (map (λ p → ⟦ proj₁ p ⟧ args) (chs hs)))
       ≤⟨ pg (map (λ p → ⟦ proj₁ p ⟧ args) (chs hs)) ⟩
     ack cg (maximum (map (λ p → ⟦ proj₁ p ⟧ args) (chs hs)))
-      ≤⟨ ack-nondecreasing₂ cg (weaken (proj₂ lemma args)) ⟩
+      ≤⟨ ack-nondecreasing₂ cg (ℕProp.≤⇒pred≤ (proj₂ lemma args)) ⟩
     ack cg (ack ch (maximum args))
       ≤⟨ ack-nondecreasing₂ cg (ack-nondecreasing₁ (maximum args) ch≤cf-1) ⟩
     ack cg (ack cf-1 (maximum args))
@@ -143,22 +141,23 @@ ack-dominates-primrec (pcomp {i}{o} g hs) with ack-dominates-primrec g
 ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-primrec h
 ... | cg , pg | ch , ph = cf , crec
  where
-  open ≤-Reasoning
+  open ℕProp.≤-Reasoning
   m-1 m : ℕ
   m-1 = pred cg ⊔ ch
   m = suc m-1
   cf : ℕ
   cf = 2 + m
+  helper : (m n : ℕ) → m ≤ suc (pred m ⊔ n)
+  helper zero n = z≤n
+  helper (suc pm) n = s≤s (m≤m⊔n pm n)
   cg≤m : cg ≤ m
-  cg≤m with cg
-  ... | zero = z≤n
-  ... | suc n = s≤s (m≤m⊔n n ch)
+  cg≤m = helper cg ch
   ack-term-wins : (y : ℕ)(xs : Vec ℕ _) → maximum (ack m (y + maximum xs) ∷ y ∷ xs) ≤ ack m (y + maximum xs)
   ack-term-wins y xs = maximum-universal (ack m (y + maximum xs) ∷ y ∷ xs) (ack m (y + maximum xs)) each-term
    where
     each-term : (i : Fin (suc (suc _))) → lookup i (ack m (y + maximum xs) ∷ y ∷ xs) ≤ ack m (y + maximum xs)
     each-term zero = ≤.refl
-    each-term (suc zero) = ≤.trans (ℕProp.m≤m+n y (maximum xs)) (weaken (ack-superlinear m))
+    each-term (suc zero) = ≤.trans (ℕProp.m≤m+n y (maximum xs)) (ℕProp.≤⇒pred≤ (ack-superlinear m))
     each-term (suc (suc i)) = begin
       lookup i xs
         ≤⟨ maximum-is xs i ⟩
@@ -167,7 +166,7 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
       maximum xs + y
         ≡⟨ +-comm (maximum xs) y ⟩
       y + maximum xs
-        ≤⟨ weaken (ack-superlinear m) ⟩
+        ≤⟨ ℕProp.≤⇒pred≤ (ack-superlinear m) ⟩
       ack m (y + maximum xs) ∎
   lemma : (y : ℕ) → (xs : Vec ℕ _) → ⟦ prec g h ⟧ (y ∷ xs) < ack m (y + maximum xs)
   lemma zero xs = ≤.trans
@@ -177,7 +176,7 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
     ⟦ h ⟧ (⟦ prec g h ⟧ (y ∷ xs) ∷ y ∷ xs)
       <⟨ ph _ ⟩
     ack ch (maximum (⟦ prec g h ⟧ (y ∷ xs) ∷ y ∷ xs))
-      ≤⟨ ack-nondecreasing₂ ch (weaken (lemma y xs) ⊔-mono ≤.refl) ⟩
+      ≤⟨ ack-nondecreasing₂ ch (ℕProp.≤⇒pred≤ (lemma y xs) ⊔-mono ≤.refl) ⟩
     ack ch (maximum (ack m (y + maximum xs) ∷ y ∷ xs))
       ≤⟨ ack-nondecreasing₂ ch (ack-term-wins y xs) ⟩
     ack ch (ack m (y + maximum xs))
@@ -194,16 +193,25 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
     ack m (y + maximum xs)
       ≤⟨ ack-nondecreasing₂ m (+-bound y (maximum xs)) ⟩
     ack m (2 * maximum (y ∷ xs))
-      ≤⟨ weaken (ack-fastgrowing m (y ⊔ maximum xs)) ⟩
+      ≤⟨ ℕProp.≤⇒pred≤ (ack-fastgrowing m (y ⊔ maximum xs)) ⟩
     ack (2 + m) (maximum (y ∷ xs)) ∎
 
+{- this is kind of a trivial and less useful corollary of previous work,
+   but if I say, I'm going to write a proof that the ackermann function
+   is not primrec, I had better produce a term of this type at the end -}
 ack-not-primrec : (p : PrimRec 2) → (λ m n → ⟦ p ⟧ (m ∷ n ∷ [])) ≢ ack
 ack-not-primrec p eq with ack-dominates-primrec p
-... | cp , pp = <⇒≢ lt′ eq′
+... | cp , pp = <⇒≢ lt eq′
  where
+  open ℕProp.≤-Reasoning
   eq′ : ⟦ p ⟧ (cp ∷ cp ∷ []) ≡ ack cp cp
   eq′ = cong (λ f → f cp cp) eq
-  lt : ⟦ p ⟧ (cp ∷ cp ∷ []) < ack cp (cp ⊔ (cp ⊔ 0))
-  lt = pp (cp ∷ cp ∷ [])
-  lt′ : ⟦ p ⟧ (cp ∷ cp ∷ []) < ack cp cp
-  lt′ = ≤.trans lt (≤.reflexive (cong (ack cp) (≡.trans (cong (_⊔_ cp) (proj₂ ⊔.identity cp)) (x⊔x≡x cp))))
+  lt : ⟦ p ⟧ (cp ∷ cp ∷ []) < ack cp cp
+  lt = begin
+    ⟦ p ⟧ (cp ∷ cp ∷ [])
+      <⟨ pp (cp ∷ cp ∷ []) ⟩
+    ack cp (cp ⊔ (cp ⊔ 0))
+      ≡⟨ cong (λ n → ack cp (cp ⊔ n)) (proj₂ ⊔.identity cp) ⟩
+    ack cp (cp ⊔ cp)
+      ≡⟨ cong (ack cp) (x⊔x≡x cp) ⟩
+    ack cp cp ∎

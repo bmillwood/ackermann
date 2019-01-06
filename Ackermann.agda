@@ -7,16 +7,16 @@ import Relation.Binary
 import Relation.Binary.PropositionalEquality as ≡
 
 open import Data.Nat using (ℕ; zero; suc;
-  _≤_; decTotalOrder; z≤n; s≤s; module ≤-Reasoning;
+  _≤_; z≤n; s≤s;
   _+_; _*_)
-open ≤-Reasoning
+open ℕProp.≤-Reasoning
 open import Data.Product using (proj₁)
 open import Function using (_$_; _∘′_)
 open Relation.Binary using (_Preserves_⟶_)
 open ≡ using (cong; _≡_)
 
 private
-  module ≤ = Relation.Binary.DecTotalOrder decTotalOrder
+  module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
 open Relation.Binary.StrictTotalOrder ℕProp.strictTotalOrder
   using (_<_; compare)
@@ -94,7 +94,7 @@ ack-monotonic₁ (suc n) {suc p} {suc (suc q)} (s≤s (s≤s le)) = begin
   ack p (ack (suc p) n)
     <⟨ ack-monotonic₂ p (ack-monotonic₁ n (s≤s (s≤s le))) ⟩
   ack p (ack (suc (suc q)) n)
-    ≤⟨ weaken (ack-monotonic₁ _ (s≤s le)) ⟩
+    ≤⟨ ℕProp.≤⇒pred≤ (ack-monotonic₁ _ (s≤s le)) ⟩
   ack (suc q) (ack (suc (suc q)) n) ∎
 
 ack-nondecreasing₁ : (n : ℕ) → (λ m → ack m n) Preserves _≤_ ⟶ _≤_
@@ -123,7 +123,7 @@ ack-fastgrowing (suc m) zero = begin
   suc (ack m 1)
     ≤⟨ ack-superlinear m ⟩
   ack m (ack m 1)
-    ≤⟨ weaken (ack-superlinear (suc m)) ⟩
+    ≤⟨ ℕProp.≤⇒pred≤ (ack-superlinear (suc m)) ⟩
   ack (suc m) (ack m (ack m 1))
     ≡⟨ ≡.refl ⟩
   ack (3 + m) 0 ∎
@@ -135,7 +135,7 @@ ack-fastgrowing (suc m) (suc n) = begin
   suc (ack m (ack m (ack (1 + m) (2 * n))))
     ≤⟨ ack-monotonic₂ m (ack-monotonic₂ m (ack-fastgrowing (1 + m) n)) ⟩
   ack m (ack m (ack (3 + m) n))
-    ≤⟨ weaken (ack-monotonic₂ m (ack-monotonic₁ (ack (3 + m) n) ≤.refl)) ⟩
+    ≤⟨ ℕProp.≤⇒pred≤ (ack-monotonic₂ m (ack-monotonic₁ (ack (3 + m) n) ≤.refl)) ⟩
   ack m (ack (1 + m) (ack (3 + m) n))
     ≡⟨ ≡.refl ⟩
   ack (1 + m) (1 + ack (3 + m) n)
