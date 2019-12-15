@@ -25,7 +25,7 @@ mutual
   ⟦_⟧ : {k : ℕ} → PrimRec k → Vec ℕ k → ℕ
   ⟦ pzero      ⟧ xs       = zero
   ⟦ psuc       ⟧ (n ∷ []) = suc n
-  ⟦ pproj i    ⟧ inp      = lookup i inp
+  ⟦ pproj i    ⟧ inp      = lookup inp i
   ⟦ pcomp g hs ⟧ inp      = ⟦ g ⟧ (⟦ hs ⟧* inp)
   ⟦ prec g h   ⟧ (zero ∷ inp)  = ⟦ g ⟧ inp
   ⟦ prec g h   ⟧ (suc n ∷ inp) = ⟦ h ⟧ ((⟦ prec g h ⟧ (n ∷ inp)) ∷ n ∷ inp)

@@ -18,9 +18,9 @@ open ≡ using (cong; _≡_)
 private
   module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
-open Relation.Binary.StrictTotalOrder ℕProp.strictTotalOrder
+open Relation.Binary.StrictTotalOrder ℕProp.<-strictTotalOrder
   using (_<_; compare)
-open Algebra.CommutativeSemiring ℕProp.commutativeSemiring
+open Algebra.CommutativeSemiring ℕProp.*-+-commutativeSemiring
   using (+-comm; *-comm; distrib)
 
 open import Lemmae
@@ -40,8 +40,8 @@ ack-superlinear : (m : ℕ) {n : ℕ} → n < ack m n
 ack-superlinear zero            = s≤s ≤.refl
 ack-superlinear (suc m) {zero}  = ≤.trans (s≤s z≤n) (ack-superlinear m)
 ack-superlinear (suc m) {suc n} = begin
-  suc n
-    <⟨ s≤s (ack-superlinear (suc m)) ⟩
+  suc (suc n)
+    ≤⟨ s≤s (ack-superlinear (suc m)) ⟩
   suc (ack (suc m) n)
     ≤⟨ ack-superlinear m ⟩
   ack m (ack (suc m) n) ∎
@@ -50,8 +50,8 @@ ack-monotonic₂ : (m : ℕ) → ack m Preserves _<_ ⟶ _<_
 ack-monotonic₂ zero lt = s≤s lt
 ack-monotonic₂ (suc m) {zero} {1} (s≤s z≤n) = ack-superlinear m
 ack-monotonic₂ (suc m) {zero} {suc (suc n)} (s≤s z≤n) = ack-monotonic₂ m $ begin
-  1
-    <⟨ s≤s (s≤s z≤n) ⟩
+  2
+    ≤⟨ s≤s (s≤s z≤n) ⟩
   suc (suc n)
     ≤⟨ ack-superlinear (suc m) ⟩
   ack (suc m) (suc n) ∎
@@ -65,8 +65,8 @@ ack-nondecreasing₂ m = weaken-monotonic (ack-monotonic₂ m)
 ack-₁dom₂ : (m n : ℕ) → ack m (suc n) ≤ ack (suc m) n
 ack-₁dom₂ m zero = ≤.refl
 ack-₁dom₂ m (suc n) = ack-nondecreasing₂ m $ begin
-  suc n
-    <⟨ ack-superlinear m ⟩
+  suc (suc n)
+    ≤⟨ ack-superlinear m ⟩
   ack m (suc n)
     ≤⟨ ack-₁dom₂ m n ⟩
   ack (suc m) n ∎
@@ -84,15 +84,15 @@ ack-₁dom₂-iterated m n (suc k) = begin
 
 ack-monotonic₁ : (n : ℕ) → (λ m → ack m n) Preserves _<_ ⟶ _<_
 ack-monotonic₁ n {zero} {suc q} (s≤s lt) = begin
-  suc n
-    <⟨ ack-superlinear q ⟩
+  suc (suc n)
+    ≤⟨ ack-superlinear q ⟩
   ack q (suc n)
     ≤⟨ ack-₁dom₂ q n ⟩
   ack (suc q) n ∎
 ack-monotonic₁ zero {suc _} {suc (suc _)} (s≤s (s≤s le)) = ack-monotonic₁ 1 (s≤s le)
 ack-monotonic₁ (suc n) {suc p} {suc (suc q)} (s≤s (s≤s le)) = begin
-  ack p (ack (suc p) n)
-    <⟨ ack-monotonic₂ p (ack-monotonic₁ n (s≤s (s≤s le))) ⟩
+  suc (ack p (ack (suc p) n))
+    ≤⟨ ack-monotonic₂ p (ack-monotonic₁ n (s≤s (s≤s le))) ⟩
   ack p (ack (suc (suc q)) n)
     ≤⟨ ℕProp.≤⇒pred≤ (ack-monotonic₁ _ (s≤s le)) ⟩
   ack (suc q) (ack (suc (suc q)) n) ∎

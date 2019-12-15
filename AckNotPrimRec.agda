@@ -25,7 +25,7 @@ open import PrimitiveRecursion
 private
   module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
-open Algebra.CommutativeSemiring ℕProp.commutativeSemiring
+open Algebra.CommutativeSemiring ℕProp.*-+-commutativeSemiring
   using (+-comm)
 
 -- ack-bound f is the proposition that f xs < ack c (maximum xs) for some c
@@ -86,18 +86,18 @@ ack-dominates-primrec (pcomp {i}{o} g hs) with ack-dominates-primrec g
           ≡⟨ ≡.refl ⟩
         c (b ∷ bs) ∎
       each-c-works : {n : ℕ} (hs : Vec prec-bound n) → (ix : Fin n)
-        → lookup ix (map (λ p → ⟦ proj₁ p ⟧ args) hs) < ack (c hs) (maximum args)
+        → lookup (map (λ p → ⟦ proj₁ p ⟧ args) hs) ix < ack (c hs) (maximum args)
       each-c-works [] ()
       each-c-works (h ∷ hs′) zero with proj₂ h
       ... | ch , ph = begin
-        ⟦ proj₁ h ⟧ args
-          <⟨ ph args ⟩
+        suc (⟦ proj₁ h ⟧ args)
+          ≤⟨ ph args ⟩
         ack ch (maximum args)
           ≤⟨ ack-nondecreasing₁ (maximum args) (m≤m⊔n ch (c hs′)) ⟩
         ack (ch ⊔ c hs′) (maximum args) ∎
       each-c-works (h ∷ hs′) (suc ix) = begin
-        lookup ix (map (λ p → ⟦ proj₁ p ⟧ args) hs′)
-          <⟨ each-c-works hs′ ix ⟩
+        suc (lookup (map (λ p → ⟦ proj₁ p ⟧ args) hs′) ix)
+          ≤⟨ each-c-works hs′ ix ⟩
         ack (c hs′) (maximum args)
           ≤⟨ ack-nondecreasing₁ (maximum args) (c-mono h hs′) ⟩
         ack (c (h ∷ hs′)) (maximum args) ∎
@@ -155,11 +155,11 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
   ack-term-wins : (y : ℕ)(xs : Vec ℕ _) → maximum (ack m (y + maximum xs) ∷ y ∷ xs) ≤ ack m (y + maximum xs)
   ack-term-wins y xs = maximum-universal (ack m (y + maximum xs) ∷ y ∷ xs) (ack m (y + maximum xs)) each-term
    where
-    each-term : (i : Fin (suc (suc _))) → lookup i (ack m (y + maximum xs) ∷ y ∷ xs) ≤ ack m (y + maximum xs)
+    each-term : (i : Fin (suc (suc _))) → lookup (ack m (y + maximum xs) ∷ y ∷ xs) i ≤ ack m (y + maximum xs)
     each-term zero = ≤.refl
     each-term (suc zero) = ≤.trans (ℕProp.m≤m+n y (maximum xs)) (ℕProp.≤⇒pred≤ (ack-superlinear m))
     each-term (suc (suc i)) = begin
-      lookup i xs
+      lookup xs i
         ≤⟨ maximum-is xs i ⟩
       maximum xs
         ≤⟨ ℕProp.m≤m+n (maximum xs) y ⟩
@@ -173,8 +173,8 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
     (pg xs)
     (ack-nondecreasing₁ (maximum xs) cg≤m)
   lemma (suc y) xs = begin
-    ⟦ h ⟧ (⟦ prec g h ⟧ (y ∷ xs) ∷ y ∷ xs)
-      <⟨ ph _ ⟩
+    suc (⟦ h ⟧ (⟦ prec g h ⟧ (y ∷ xs) ∷ y ∷ xs))
+      ≤⟨ ph _ ⟩
     ack ch (maximum (⟦ prec g h ⟧ (y ∷ xs) ∷ y ∷ xs))
       ≤⟨ ack-nondecreasing₂ ch (ℕProp.≤⇒pred≤ (lemma y xs) ⊔-mono ≤.refl) ⟩
     ack ch (maximum (ack m (y + maximum xs) ∷ y ∷ xs))
@@ -185,11 +185,11 @@ ack-dominates-primrec (prec g h) with ack-dominates-primrec g | ack-dominates-pr
       ≡⟨ ≡.refl ⟩
     ack m (suc y + maximum xs) ∎
   +-bound : (m n : ℕ) → m + n ≤ 2 * (m ⊔ n)
-  +-bound m n = m≤m⊔n m n ℕProp.+-mono ≤.trans (m≤m⊔n n m) (≤.reflexive (≡.trans (⊔.comm n m) (+-comm 0 (m ⊔ n))))
+  +-bound m n = ℕProp.+-mono-≤ (m≤m⊔n m n) (≤.trans (m≤m⊔n n m) (≤.reflexive (≡.trans (⊔.comm n m) (+-comm 0 (m ⊔ n)))))
   crec : (args : Vec ℕ _) → ⟦ prec g h ⟧ args < ack cf (maximum args)
   crec (y ∷ xs) = begin
-    ⟦ prec g h ⟧ (y ∷ xs)
-      <⟨ lemma y xs ⟩
+    suc (⟦ prec g h ⟧ (y ∷ xs))
+      ≤⟨ lemma y xs ⟩
     ack m (y + maximum xs)
       ≤⟨ ack-nondecreasing₂ m (+-bound y (maximum xs)) ⟩
     ack m (2 * maximum (y ∷ xs))
@@ -208,8 +208,8 @@ ack-not-primrec p eq with ack-dominates-primrec p
   eq′ = cong (λ f → f cp cp) eq
   lt : ⟦ p ⟧ (cp ∷ cp ∷ []) < ack cp cp
   lt = begin
-    ⟦ p ⟧ (cp ∷ cp ∷ [])
-      <⟨ pp (cp ∷ cp ∷ []) ⟩
+    suc (⟦ p ⟧ (cp ∷ cp ∷ []))
+      ≤⟨ pp (cp ∷ cp ∷ []) ⟩
     ack cp (cp ⊔ (cp ⊔ 0))
       ≡⟨ cong (λ n → ack cp (cp ⊔ n)) (proj₂ ⊔.identity cp) ⟩
     ack cp (cp ⊔ cp)

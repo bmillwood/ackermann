@@ -20,8 +20,8 @@ open ≡ using (cong; _≡_; _≢_; module ≡-Reasoning)
 private
   module ≤ = Relation.Binary.DecTotalOrder ℕProp.≤-decTotalOrder
 
-open Relation.Binary.StrictTotalOrder ℕProp.strictTotalOrder using (compare)
-open Algebra.CommutativeSemiring ℕProp.commutativeSemiring
+open Relation.Binary.StrictTotalOrder ℕProp.<-strictTotalOrder using (compare)
+open Algebra.CommutativeSemiring ℕProp.*-+-commutativeSemiring
   using (+-comm; *-comm; distrib)
 
 -- Increasing implies nondecreasing.
@@ -47,7 +47,7 @@ pred-∸-suc (suc m) zero = ≡.refl
 pred-∸-suc (suc m) (suc n) = pred-∸-suc m n
 
 module ⊔ = Algebra.Structures.IsCommutativeMonoid
-  (Algebra.CommutativeSemiringWithoutOne.+-isCommutativeMonoid ℕProp.⊔-⊓-0-commutativeSemiringWithoutOne)
+  (Algebra.CommutativeSemiringWithoutOne.+-isCommutativeMonoid ℕProp.⊔-⊓-commutativeSemiringWithoutOne)
 
 m≤n⊔m : (m n : ℕ) → m ≤ n ⊔ m
 m≤n⊔m m n = begin
@@ -107,13 +107,13 @@ mono-⊔ {f} mono {x} {y} | tri> _ _ y<x = ≡.trans lemma₁ lemma₂
 maximum : {n : ℕ} → Vec ℕ n → ℕ
 maximum = foldr (const ℕ) _⊔_ 0
 
-maximum-is : {n : ℕ} → (xs : Vec ℕ n) → (i : Fin n) → lookup i xs ≤ maximum xs
+maximum-is : {n : ℕ} → (xs : Vec ℕ n) → (i : Fin n) → lookup xs i ≤ maximum xs
 maximum-is [] ()
 maximum-is (x ∷ xs) zero = m≤m⊔n x _
 maximum-is (x ∷ xs) (suc i) = begin
-  lookup (suc i) (x ∷ xs)
+  lookup (x ∷ xs) (suc i)
     ≡⟨ ≡.refl ⟩
-  lookup i xs
+  lookup xs i
     ≤⟨ maximum-is xs i ⟩
   maximum xs
     ≤⟨ m≤n⊔m _ x ⟩
@@ -123,11 +123,11 @@ maximum-is (x ∷ xs) (suc i) = begin
  where
   open ℕProp.≤-Reasoning
 
-maximum-universal : {n : ℕ} → (xs : Vec ℕ n) → (m : ℕ) → ((i : Fin n) → lookup i xs ≤ m) → maximum xs ≤ m
+maximum-universal : {n : ℕ} → (xs : Vec ℕ n) → (m : ℕ) → ((i : Fin n) → lookup xs i ≤ m) → maximum xs ≤ m
 maximum-universal [] _ _ = z≤n
 maximum-universal (x ∷ xs) m f = ⊔-universal (f zero) (maximum-universal xs m (λ i → f (suc i)))
 
-maximum-universal< : {n : ℕ} → (xs : Vec ℕ n) → (m : ℕ) → 0 < m → ((i : Fin n) → lookup i xs < m) → maximum xs < m
+maximum-universal< : {n : ℕ} → (xs : Vec ℕ n) → (m : ℕ) → 0 < m → ((i : Fin n) → lookup xs i < m) → maximum xs < m
 maximum-universal< [] _ le _ = le
 maximum-universal< (x ∷ xs) (suc m) (s≤s m≤n) f = s≤s (maximum-universal (x ∷ xs) m (λ i → ℕProp.pred-mono (f i)))
 
